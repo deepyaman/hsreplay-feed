@@ -12,13 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
+
+from apiclient.discovery import build
+from google.appengine.api import urlfetch
 import webapp2
 
 
 class MainPage(webapp2.RequestHandler):
     def get(self):
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write('Hello, World!')
+        url = 'https://hsreplay.net/api/v1/live/replay_feed/'
+        try:
+            result = urlfetch.fetch(url)
+            if result.status_code == 200:
+                service = build('pubsub', 'v1')
+                publish_client = service.projects().topics()
+                topic = 'projects/hsreplay-feed/topics/replay-feed'
+                message = base64.b64encode(result.content)
+                body = {'messages': [{'data': message}]}
+                publish_client.publish(topic=topic, body=body).execute()
+            else:
+                self.response.status_code = result.status_code
+        except urlfetch.Error:
+            logging.exception('Caught exception fetching url')
 
 
 app = webapp2.WSGIApplication([
