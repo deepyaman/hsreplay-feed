@@ -1,0 +1,4 @@
+cron:
+- description: "minutely replay feed fetch"
+  url: /
+  schedule: every 1 minutes synchronized
